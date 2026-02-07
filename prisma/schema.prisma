@@ -1,0 +1,455 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User and Authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String? // Hashed, null for OAuth users
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  teamMembers   TeamMember[]
+  defaultTeamId String?
+  defaultTeam   Team?        @relation(fields: [defaultTeamId], references: [id])
+  tasks         Task[]       @relation("AssignedTasks")
+  createdTasks  Task[]       @relation("CreatedTasks")
+  aiMessages    AIMessage[]
+}
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  refresh_token_expires_in Int?
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Teams and Projects
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     TeamMember[]
+  projects    Project[]
+  invitations TeamInvitation[]
+
+  users User[]
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model TeamInvitation {
+  id        String           @id @default(cuid())
+  teamId    String
+  email     String
+  role      Role             @default(EDITOR)
+  status    InvitationStatus @default(PENDING)
+  invitedBy String
+  createdAt DateTime         @default(now())
+  expiresAt DateTime
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, email])
+  @@index([email, status])
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  teamId      String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team            Team?               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+  canvas          Canvas?
+  markdownFiles   MarkdownFile[]
+  spreadsheet     Spreadsheet?
+  gitRepo         GitRepository?
+  activities      Activity[]
+  invitations     ProjectInvitation[]
+  decisionRecords DecisionRecord[]
+}
+
+model ProjectInvitation {
+  id        String           @id @default(cuid())
+  projectId String
+  email     String
+  role      Role             @default(EDITOR)
+  status    InvitationStatus @default(PENDING)
+  invitedBy String
+  createdAt DateTime         @default(now())
+  expiresAt DateTime
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, email])
+  @@index([email, status])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+// Kanban and Tasks
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  position    Int
+  projectId   String
+  assigneeId  String?
+  createdById String
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee  User?   @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  createdBy User    @relation("CreatedTasks", fields: [createdById], references: [id])
+
+  @@index([projectId, status])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  UNDER_REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Canvas (Architecture Map)
+model Canvas {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  state     Json // Stores canvas objects and state
+  version   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  components Component[]
+}
+
+// Architecture Map Components
+model Component {
+  id          String   @id @default(cuid())
+  componentId String   @unique // Unique Component ID for referencing
+  canvasId    String
+  name        String
+  type        String // 'service', 'library', 'database', 'external', 'ui'
+  description String?  @db.Text
+  position    Json // { x: number, y: number }
+  metadata    Json? // Additional component metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  canvas              Canvas                @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  decisionComponents  ComponentDecision[]
+  componentMarkdowns  ComponentMarkdown[]
+  componentCommits    ComponentCommit[]
+
+  @@index([canvasId])
+  @@index([componentId])
+}
+
+// Decision Records
+model DecisionRecord {
+  id           String         @id @default(cuid())
+  projectId    String
+  title        String
+  context      String         @db.Text
+  decision     String         @db.Text
+  rationale    String         @db.Text
+  consequences String         @db.Text
+  status       DecisionStatus @default(PROPOSED)
+  supersededBy String?
+  supersedes   String?
+  createdBy    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tags         String[]
+
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supersededByRecord  DecisionRecord?     @relation("DecisionSupersession", fields: [supersededBy], references: [id], onDelete: SetNull)
+  supersedesRecords   DecisionRecord[]    @relation("DecisionSupersession")
+  componentDecisions  ComponentDecision[]
+  decisionMarkdowns   DecisionMarkdown[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum DecisionStatus {
+  PROPOSED
+  ACCEPTED
+  DEPRECATED
+  SUPERSEDED
+}
+
+// Junction table for Component-Decision linking
+model ComponentDecision {
+  id             String   @id @default(cuid())
+  componentId    String
+  decisionId     String
+  linkedAt       DateTime @default(now())
+
+  component Component      @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  decision  DecisionRecord @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@unique([componentId, decisionId])
+  @@index([componentId])
+  @@index([decisionId])
+}
+
+// Markdown Files
+model MarkdownFile {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project              Project                   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  componentMarkdowns   ComponentMarkdown[]
+  decisionMarkdowns    DecisionMarkdown[]
+}
+
+// Junction table for Component-Markdown linking
+model ComponentMarkdown {
+  id             String   @id @default(cuid())
+  componentId    String
+  markdownId     String
+  linkedAt       DateTime @default(now())
+
+  component Component    @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  markdown  MarkdownFile @relation(fields: [markdownId], references: [id], onDelete: Cascade)
+
+  @@unique([componentId, markdownId])
+  @@index([componentId])
+  @@index([markdownId])
+}
+
+// Junction table for Decision-Markdown linking
+model DecisionMarkdown {
+  id             String   @id @default(cuid())
+  decisionId     String
+  markdownId     String
+  linkedAt       DateTime @default(now())
+
+  decision DecisionRecord @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  markdown MarkdownFile   @relation(fields: [markdownId], references: [id], onDelete: Cascade)
+
+  @@unique([decisionId, markdownId])
+  @@index([decisionId])
+  @@index([markdownId])
+}
+
+// Junction table for Component-Commit tagging
+model ComponentCommit {
+  id             String   @id @default(cuid())
+  componentId    String
+  commitSha      String
+  repositoryId   String
+  taggedAt       DateTime @default(now())
+  autoDetected   Boolean  @default(false)
+
+  component    Component     @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  repository   GitRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  commit       GitCommit     @relation(fields: [commitSha, repositoryId], references: [sha, repositoryId], onDelete: Cascade)
+
+  @@unique([componentId, commitSha])
+  @@index([componentId])
+  @@index([commitSha])
+  @@index([repositoryId])
+}
+
+// Spreadsheet
+model Spreadsheet {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  data      Json // Stores cell data and formulas
+  category  String?  // Category: metrics, configurations, models
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// GitHub Integration
+model GitRepository {
+  id           String    @id @default(cuid())
+  projectId    String    @unique
+  githubRepoId String
+  owner        String
+  name         String
+  fullName     String
+  accessToken  String    @db.Text // Encrypted
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  commits          GitCommit[]
+  componentCommits ComponentCommit[]
+}
+
+model GitCommit {
+  id           String   @id @default(cuid())
+  repositoryId String
+  sha          String
+  message      String   @db.Text
+  author       String
+  authorEmail  String
+  committedAt  DateTime
+  url          String
+  createdAt    DateTime @default(now())
+
+  repository       GitRepository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  componentCommits ComponentCommit[]
+
+  @@unique([repositoryId, sha])
+}
+
+// AI Assistant
+model AIMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String?
+  role      String // 'user' or 'assistant'
+  content   String   @db.Text
+  context   Json? // Additional context data
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Activity Feed
+model Activity {
+  id        String       @id @default(cuid())
+  projectId String
+  type      ActivityType
+  data      Json
+  createdAt DateTime     @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+enum ActivityType {
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_COMPLETED
+  GIT_COMMIT
+  MARKDOWN_CREATED
+  MARKDOWN_UPDATED
+  AI_SUGGESTION
+  MEMBER_JOINED
+}
+
+// Contextual Discussions
+model Discussion {
+  id          String         @id @default(cuid())
+  projectId   String
+  title       String
+  anchorType  AnchorType
+  anchorId    String // ComponentID, DecisionID, or Git SHA
+  createdBy   String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  messages    DiscussionMessage[]
+
+  @@index([projectId])
+  @@index([anchorType, anchorId])
+}
+
+model DiscussionMessage {
+  id           String     @id @default(cuid())
+  discussionId String
+  authorId     String
+  content      String     @db.Text
+  createdAt    DateTime   @default(now())
+
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId])
+}
+
+enum AnchorType {
+  COMPONENT
+  DECISION
+  COMMIT
+  PULL_REQUEST
+}
