@@ -1,138 +1,198 @@
-# Synkora Platform
+# 🧠 Synkora  
+### Engineering & System Architecture Intelligence Platform
 
-A collaborative, AI-assisted project management platform with real-time collaboration features.
+Synkora is an **Engineering & System Architecture Intelligence Platform** designed to preserve the architectural context, engineering decisions, and system reasoning behind complex software systems.
 
-## Features
+Unlike traditional project management or collaboration tools, Synkora focuses on **understanding why systems are built the way they are**, not just tracking tasks, conversations, or documents.
 
-- 🔐 Authentication with NextAuth.js (Email/Password, Google OAuth, GitHub OAuth)
-- 📊 Kanban board with drag-and-drop task management
-- 🤖 AI Assistant powered by OpenAI/Gemini
-- 🎨 Collaborative canvas workspace
-- 📝 Real-time markdown editor
-- 📈 Collaborative spreadsheet tool
-- 🔄 GitHub repository integration
-- 👥 Team management and project invitations
-- 📱 Responsive design for all devices
-- ⚡ Real-time updates with Socket.io
+---
 
-## Tech Stack
+## 🚩 Problem Statement
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
-- **Styling**: TailwindCSS, shadcn/ui
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **Real-time**: Socket.io
-- **AI**: OpenAI API / Gemini API
-- **Icons**: Lucide React
-- **Animations**: Framer Motion
+Modern engineering systems evolve rapidly, but the understanding of those systems does not.
 
-## Getting Started
+- Architecture diagrams exist without reasoning  
+- Critical decisions are scattered across chats, meetings, and commits  
+- Documentation becomes outdated or fragmented  
+- New engineers struggle to understand system design  
+- Changes become risky due to missing historical context  
 
-### Prerequisites
+Existing tools manage **execution, communication, or documentation** in isolation.  
+**None preserve system intelligence.**
 
-- Node.js 18+ and npm
-- PostgreSQL database
+---
 
-### Installation
+## 💡 What Synkora Does
 
-1. Clone the repository
-2. Install dependencies:
+Synkora acts as a **long-term memory layer for engineering systems** by capturing and connecting:
 
-```bash
-npm install
-```
+- System architecture
+- Engineering decisions and trade-offs
+- Technical documentation and system knowledge
+- System evolution over time
+- Execution and repository signals
 
-3. Copy the environment variables template:
+Synkora answers a critical question:
 
-```bash
-cp .env.example .env
-```
+> **“Why is this system built the way it is?”**
 
-4. Update the `.env` file with your configuration
+---
 
-5. Set up the database:
+## ✨ Key Features
 
-```bash
-npx prisma generate
-npx prisma migrate dev
-```
+### 🧩 System Architecture Map
+- Visual representation of system components, dependencies, and data flows
+- Acts as the central context for all system intelligence
 
-6. Seed the database with sample data (optional):
+### 📝 Engineering Decision Records
+- Structured capture of architectural and technical decisions
+- Includes problem statements, alternatives, trade-offs, and outcomes
+- Linked directly to affected system components
 
-```bash
-npm run db:seed
-```
+### 📚 System Knowledge Base
+- Markdown documents and spreadsheets
+- Contextually linked to architecture and decisions
+- Eliminates scattered and outdated documentation
 
-This will create:
-- 3 test users (alice@example.com, bob@example.com, charlie@example.com)
-- Password for all test users: `password123`
-- A development team with sample projects and tasks
-- Activity feed entries
+### ⏳ System Evolution Timeline
+- Chronological view of architectural changes and decision history
+- Helps teams understand how and why the system evolved
 
-7. Run the development server:
+### 🔧 Execution Signals (Secondary Layer)
+- Kanban boards and workload analysis
+- GitHub integration for repositories, branches, and commits
+- Used as **signals**, not as the core intelligence
 
-```bash
-npm run dev
-```
+---
 
-8. Open [http://localhost:3000](http://localhost:3000) in your browser
+## 🤖 AI & Intelligence Layer
 
-## Project Structure
+Synkora uses a **hybrid AI intelligence layer** that combines **Gemini foundation models** with **custom-trained system-aware models and advanced reasoning logic**.
 
-```
-├── app/                    # Next.js App Router pages
-├── components/             # React components
-│   └── ui/                # shadcn/ui components
-├── lib/                   # Utility functions and configurations
-├── hooks/                 # Custom React hooks
-├── types/                 # TypeScript type definitions
-├── prisma/                # Prisma schema and migrations
-└── public/                # Static assets
-```
+### How the AI Works
+- Synkora constructs a **system context layer** from:
+  - Architecture maps (components, dependencies, data flows)
+  - Engineering decision records (problems, trade-offs, rationale)
+  - System knowledge (markdown, spreadsheets, documentation)
+  - Execution signals (Kanban, workload)
+  - Repository metadata (commits, branches, changes)
+- This structured context is processed through:
+  - **Gemini models** for language understanding and reasoning
+  - **Custom-trained and fine-tuned models** for domain-specific system and architecture intelligence
+- Additional reasoning layers ensure responses remain **contextual, explainable, and grounded in verified data**
 
-## Available Scripts
+### What the AI Does
+- Explains system architecture in clear technical language
+- Justifies why architectural and engineering decisions were made
+- Assists in onboarding new engineers by summarizing system context
+- Identifies high-risk or high-change components
+- Analyzes system evolution and potential impact of changes
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run db:seed` - Seed database with sample data
+### AI Design Principles
+- System-first reasoning (architecture and decisions before tasks)
+- Explainability over automation
+- Controlled context injection to avoid hallucinations
+- Explicit traceability to system data
 
-## Current Implementation Status
+This approach allows Synkora’s AI to deliver **engineering intelligence**, not generic chatbot responses.
 
-### ✅ Completed Features
+---
 
-- **Authentication System** (Task 3)
-  - Email/password authentication with bcrypt
-  - Google OAuth integration
-  - Session management with JWT
-  - Role-based access control (Owner, Editor, Viewer)
-  - Protected routes and API guards
+## 🎯 Target Audience
 
-- **Dashboard and Project Management** (Task 4)
-  - Project listing with cards
-  - Create, read, update, delete projects
-  - Team-based project organization
-  - Activity feed with recent events
-  - Quick actions panel
-  - Responsive layout
+- Engineering teams building complex systems
+- System architects and technical leads
+- Startups scaling architecture rapidly
+- Student and research teams working on large technical projects
 
-### 🚧 In Progress
+---
 
-- Kanban board (Task 8)
-- Real-time collaboration (Task 9)
-- AI Assistant integration (Task 14)
-- GitHub integration (Task 15)
+## 🏗️ High-Level Architecture
+Frontend (Web Application)
+↓
+Backend APIs (Containerized)
+↓
+Database (Relational Store)
+↓
+AI Intelligence Layer
+(Gemini + Custom Models)
+↓
+External Integrations (GitHub, Docs, Execution Data)
+---
 
-### 📋 Planned Features
+## 🚀 Deployment
 
-- Team invitations
-- Project workspace with tabs
-- Collaborative canvas
-- Markdown editor
-- Spreadsheet tool
-- Analytics dashboard
+### Backend
+- Fully **containerized using Docker**
+- Deployed on **Microsoft Azure**
+- Cloud-ready and scalable architecture
 
-## License
+### Infrastructure Highlights
+- Dockerized backend services
+- Azure Container Services / App Services
+- Environment-based configuration
+- Secure and modular service design
 
-MIT
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- Docker
+- REST APIs
+- Azure Cloud
+- Relational Database (PostgreSQL or equivalent)
+
+### Frontend
+- Web-based UI
+- Architecture canvas
+- System intelligence dashboards
+
+### AI
+- Gemini foundation models
+- Custom-trained system-aware models
+- Advanced reasoning and context pipelines
+
+---
+
+## 🔐 Data Integrity & Reliability
+
+- External data is validated and normalized before ingestion
+- Corrupted or incomplete data is flagged or quarantined
+- AI responses are generated using verified system context
+- All intelligence outputs reference underlying system artifacts
+
+---
+
+## 🔮 Future Scope
+
+- AI-driven architecture reviews
+- Automated change-impact and dependency analysis
+- Predictive risk detection in system design
+- Enterprise compliance and audit trails
+- Deeper CI/CD and infrastructure integrations
+
+---
+
+## 📌 Why Synkora Is Different
+
+| Traditional Tools | Synkora |
+|------------------|--------|
+| Track tasks | Preserve system intelligence |
+| Store documents | Capture architectural reasoning |
+| Manage communication | Explain system evolution |
+| Focus on execution | Focus on understanding |
+
+---
+
+## 🏁 Conclusion
+
+> Systems don’t fail because tasks are missed.  
+> They fail because teams forget **why systems were built the way they were**.
+
+**Synkora ensures engineering systems are not just built, but understood.**
+
+---
+
+## 📄 License
+This project is under active development.
